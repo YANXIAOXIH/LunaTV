@@ -179,6 +179,14 @@ export class DbManager {
     return [];
   }
 
+  async setUserAvatar(userName: string, avatarUrl: string): Promise<void> {
+    return this.storage.setUserAvatar(userName, avatarUrl);
+  }
+
+  async getUserDetails(userName: string): Promise<{ username: string, avatar_url: string | null } | null> {
+    return this.storage.getUserDetails(userName);
+  }
+
   // ---------- 管理员配置 ----------
   async getAdminConfig(): Promise<AdminConfig | null> {
     if (typeof (this.storage as any).getAdminConfig === 'function') {
