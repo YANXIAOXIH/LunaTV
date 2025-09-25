@@ -344,21 +344,31 @@ export class UpstashRedisStorage implements IStorage {
     return configs;
   }
 
+  // 用户头像
+  private userAvatarKey(user: string) {
+    return `u:${user}:avatar`;
+  }
+
   async setUserAvatar(userName: string, avatarUrl: string): Promise<void> {
-    const redis = this.getUpstashRedisClient();
-    await redis.hset(`user:${userName}`, { avatar_url: avatarUrl });
+    const key = this.userAvatarKey(userName);
+    if (avatarUrl) {
+      await this.redis.set(key, avatarUrl);
+    } else {
+      await this.redis.del(key);
+    }
   }
 
   async getUserDetails(userName: string): Promise<{ username: string; avatar_url: string | null } | null> {
-    const redis = this.getUpstashRedisClient();
-    const userExists = await redis.exists(`user:${userName}`);
+    const userExists = await this.checkUserExist(userName);
     if (!userExists) {
       return null;
     }
-    const userDetails = await redis.hgetall(`user:${userName}`);
+
+    const avatarUrl = await this.redis.get<string>(this.userAvatarKey(userName));
+
     return {
       username: userName,
-      avatar_url: (userDetails?.avatar_url as string | undefined) || null,
+      avatar_url: avatarUrl || null,
     };
   }
 
