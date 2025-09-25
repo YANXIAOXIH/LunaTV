@@ -14,12 +14,13 @@ export const changelog: ChangelogEntry[] = [
     version: "100.0.1",
     date: "2025-09-25",
     added: [
-      // 无新增内容
+      '新增了 Cloudflare D1 数据库支持',
     ],
     changed: [
-      // 无变更内容
+      '将所有动态路由适配到 Edge Runtime',
+      '使用 pako 替换 zlib 以兼容 Edge 环境',
     ],
-      fixed: [
+    fixed: [
       "修复错误的环境变量 ADMIN_USERNAME",
       "修复 bangumi 数据中没有图片导致首页崩溃问题"
     ]

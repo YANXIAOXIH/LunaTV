@@ -5,6 +5,15 @@
 - 修复错误的环境变量 ADMIN_USERNAME
 - 修复 bangumi 数据中没有图片导致首页崩溃问题
 
+### Added
+
+- 新增了 Cloudflare D1 数据库支持
+
+### Changed
+
+- 将所有动态路由适配到 Edge Runtime
+- 使用 pako 替换 zlib 以兼容 Edge 环境
+
 ## [100.0.0] - 2025-08-26
 
 ### Added
