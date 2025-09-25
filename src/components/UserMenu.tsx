@@ -1180,11 +1180,11 @@ export const UserMenu: React.FC = () => {
             <img
               src={avatarUrl}
               alt="User Avatar"
-              className="w-full h-full object-cover"
+              cclassName="w-8 h-8 object-cover rounded-full"
               onError={() => setAvatarError(true)}
             />
           ) : (
-            <User className='w-full h-full p-2' />
+            <User className='w-full h-full' />
           )}
         </button>
         {updateStatus === UpdateStatus.HAS_UPDATE && (
