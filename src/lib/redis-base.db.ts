@@ -357,6 +357,40 @@ export abstract class BaseRedisStorage implements IStorage {
       .filter((u): u is string => typeof u === 'string');
   }
 
+  // ---------- 用户头像 ----------
+  private userAvatarKey(user: string) {
+    return `u:${user}:avatar`; // 定义头像的 key，例如: u:username:avatar
+  }
+
+  async setUserAvatar(userName: string, avatarUrl: string): Promise<void> {
+    const key = this.userAvatarKey(userName);
+    if (avatarUrl) {
+      // 如果 URL 存在，则设置
+      await this.withRetry(() => this.client.set(key, avatarUrl));
+    } else {
+      // 如果 URL 为空字符串，则删除该键
+      await this.withRetry(() => this.client.del(key));
+    }
+  }
+
+  async getUserDetails(userName: string): Promise<{ username: string; avatar_url: string | null } | null> {
+    // 首先检查用户是否存在
+    const userExists = await this.checkUserExist(userName);
+    if (!userExists) {
+      return null;
+    }
+
+    // 获取头像URL
+    const avatarUrl = await this.withRetry(() =>
+      this.client.get(this.userAvatarKey(userName))
+    );
+
+    return {
+      username: userName,
+      avatar_url: avatarUrl || null, // 如果不存在则返回 null
+    };
+  }
+
   // ---------- 管理员配置 ----------
   private adminConfigKey() {
     return 'admin:config';
