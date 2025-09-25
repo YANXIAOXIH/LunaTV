@@ -15,6 +15,7 @@ export const changelog: ChangelogEntry[] = [
     date: "2025-09-25",
     added: [
       '新增了 Cloudflare D1 数据库支持',
+      '新增了 自定义头像',
     ],
     changed: [
       '将所有动态路由适配到 Edge Runtime',
