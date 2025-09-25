@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(userDetails);
   } catch (error) {
     console.error('Failed to fetch user details:', error);
-    return NextResponse.json({ error: 'Failed to fetch user details' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: 'Failed to fetch user details', details: errorMessage }, { status: 500 });
   }
 }

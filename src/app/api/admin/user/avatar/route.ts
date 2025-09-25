@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 
 export const runtime = 'edge';
 
+// 处理 POST 请求，用于更新头像
 export async function POST(request: NextRequest) {
   const authInfo = getAuthInfoFromCookie(request);
   if (!authInfo || !authInfo.username) {
@@ -14,7 +15,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { avatarUrl } = body;
 
-    // 简单的验证
     if (typeof avatarUrl !== 'string') {
       return NextResponse.json({ error: 'Invalid avatar URL' }, { status: 400 });
     }
@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, message: 'Avatar updated successfully' });
   } catch (error) {
     console.error('Failed to update avatar:', error);
-    return NextResponse.json({ error: 'Failed to update avatar' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: 'Failed to update avatar', details: errorMessage }, { status: 500 });
   }
 }

@@ -129,7 +129,7 @@ export const UserMenu: React.FC = () => {
 
       const fetchUserDetails = async () => {
         try {
-          const response = await fetch('/api/avatar/me');
+          const response = await fetch('/api/admin/user/me');
           if (response.ok) {
             const data = await response.json();
             if (data.avatar_url) {
@@ -441,7 +441,7 @@ export const UserMenu: React.FC = () => {
     }
 
     try {
-      const response = await fetch('/api/avatar', {
+      const response = await fetch('/api/admin/user/avatar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ avatarUrl: value }),
@@ -1180,7 +1180,7 @@ export const UserMenu: React.FC = () => {
             <img
               src={avatarUrl}
               alt="User Avatar"
-              className="w-8 h-8 object-cover rounded-full"
+              className="w-7 h-7 object-cover rounded-full"
               onError={() => setAvatarError(true)}
             />
           ) : (
