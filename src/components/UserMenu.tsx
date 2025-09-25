@@ -22,6 +22,7 @@ import { CURRENT_VERSION } from '@/lib/version';
 import { checkForUpdates, UpdateStatus } from '@/lib/version_check';
 
 import { VersionPanel } from './VersionPanel';
+import { Image as ImageIcon, User, X } from 'lucide-react';
 
 interface AuthInfo {
   username?: string;
@@ -37,6 +38,8 @@ export const UserMenu: React.FC = () => {
   const [authInfo, setAuthInfo] = useState<AuthInfo | null>(null);
   const [storageType, setStorageType] = useState<string>('localstorage');
   const [mounted, setMounted] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [avatarError, setAvatarError] = useState(false);
 
   // Body 滚动锁定 - 使用 overflow 方式避免布局问题
   useEffect(() => {
@@ -123,6 +126,28 @@ export const UserMenu: React.FC = () => {
       const type =
         (window as any).RUNTIME_CONFIG?.STORAGE_TYPE || 'localstorage';
       setStorageType(type);
+
+      const fetchUserDetails = async () => {
+        try {
+          const response = await fetch('/api/avatar/me');
+          if (response.ok) {
+            const data = await response.json();
+            if (data.avatar_url) {
+              setAvatarUrl(data.avatar_url);
+              localStorage.setItem('userAvatarUrl', data.avatar_url);
+            }
+          }
+        } catch (error) {
+          console.error("Couldn't fetch user details:", error);
+        }
+      };
+
+      if (auth?.username) {
+        // 先从缓存快速加载，再从网络更新
+        const cachedAvatar = localStorage.getItem('userAvatarUrl');
+        if (cachedAvatar) setAvatarUrl(cachedAvatar);
+        fetchUserDetails();
+      }
     }
   }, []);
 
@@ -194,6 +219,11 @@ export const UserMenu: React.FC = () => {
       const savedLiveDirectConnect = localStorage.getItem('liveDirectConnect');
       if (savedLiveDirectConnect !== null) {
         setLiveDirectConnect(JSON.parse(savedLiveDirectConnect));
+      }
+
+      const savedAvatarUrl = localStorage.getItem('userAvatarUrl');
+      if (savedAvatarUrl) {
+        setAvatarUrl(savedAvatarUrl);
       }
     }
   }, []);
@@ -398,6 +428,33 @@ export const UserMenu: React.FC = () => {
     }
   };
 
+  const handleAvatarUrlChange = async (value: string) => {
+    setAvatarUrl(value);
+    setAvatarError(false);
+
+    if (typeof window !== 'undefined') {
+      if (value) {
+        localStorage.setItem('userAvatarUrl', value);
+      } else {
+        localStorage.removeItem('userAvatarUrl');
+      }
+    }
+
+    try {
+      const response = await fetch('/api/avatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatarUrl: value }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save avatar to the server.');
+      }
+    } catch (error) {
+      console.error('Network error while saving avatar:', error);
+    }
+  };
+
   // 获取感谢信息
   const getThanksInfo = (dataSource: string) => {
     switch (dataSource) {
@@ -437,6 +494,7 @@ export const UserMenu: React.FC = () => {
     setDoubanDataSource(defaultDoubanProxyType);
     setDoubanImageProxyType(defaultDoubanImageProxyType);
     setDoubanImageProxyUrl(defaultDoubanImageProxyUrl);
+    setAvatarUrl('');
 
     if (typeof window !== 'undefined') {
       localStorage.setItem('defaultAggregateSearch', JSON.stringify(true));
@@ -447,6 +505,7 @@ export const UserMenu: React.FC = () => {
       localStorage.setItem('doubanDataSource', defaultDoubanProxyType);
       localStorage.setItem('doubanImageProxyType', defaultDoubanImageProxyType);
       localStorage.setItem('doubanImageProxyUrl', defaultDoubanImageProxyUrl);
+      localStorage.removeItem('userAvatarUrl');
     }
   };
 
@@ -487,9 +546,9 @@ export const UserMenu: React.FC = () => {
         <div className='px-3 py-2.5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800 dark:to-gray-800/50'>
           <div className='space-y-1'>
             <div className='flex items-center justify-between'>
-              <div className='font-semibold text-gray-900 dark:text-gray-100 text-sm truncate'>
-                {authInfo?.username || 'default'}
-              </div>
+              <span className='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
+                当前用户
+              </span>
               <span
                 className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${(authInfo?.role || 'user') === 'owner'
                   ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
@@ -502,9 +561,9 @@ export const UserMenu: React.FC = () => {
               </span>
             </div>
             <div className='flex items-center justify-between'>
-              <span className='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
-                当前用户
-              </span>
+              <div className='font-semibold text-gray-900 dark:text-gray-100 text-sm truncate'>
+                {authInfo?.username || 'default'}
+              </div>
               <div className='text-[10px] text-gray-400 dark:text-gray-500'>
                 数据存储：
                 {storageType === 'localstorage' ? '本地' : storageType}
@@ -955,6 +1014,29 @@ export const UserMenu: React.FC = () => {
               </label>
             </div>
           </div>
+          <div className='my-6 border-t border-gray-200 dark:border-gray-700'></div>
+
+          {/* 自定义头像 */}
+          <div className='space-y-3'>
+            <div>
+              <h4 className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                自定义头像
+              </h4>
+              <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
+                输入一个在线图片链接作为您的头像
+              </p>
+            </div>
+            <div className="relative">
+              <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type='text'
+                className='w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 shadow-sm hover:border-gray-400 dark:hover:border-gray-500'
+                placeholder='https://.../avatar.png'
+                value={avatarUrl}
+                onChange={(e) => handleAvatarUrlChange(e.target.value)}
+              />
+            </div>
+          </div>
 
           {/* 底部说明 */}
           <div className='mt-6 pt-4 border-t border-gray-200 dark:border-gray-700'>
@@ -1091,10 +1173,19 @@ export const UserMenu: React.FC = () => {
       <div className='relative'>
         <button
           onClick={handleMenuClick}
-          className='w-10 h-10 p-2 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200/50 dark:text-gray-300 dark:hover:bg-gray-700/50 transition-colors'
+          className='w-10 h-10 p-2 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200/50 dark:text-gray-300 dark:hover:bg-gray-700/50 transition-colors overflow-hidden'
           aria-label='User Menu'
         >
-          <User className='w-full h-full' />
+          {avatarUrl && !avatarError ? (
+            <img
+              src={avatarUrl}
+              alt="User Avatar"
+              className="w-full h-full object-cover"
+              onError={() => setAvatarError(true)}
+            />
+          ) : (
+            <User className='w-full h-full p-2' />
+          )}
         </button>
         {updateStatus === UpdateStatus.HAS_UPDATE && (
           <div className='absolute top-[2px] right-[2px] w-2 h-2 bg-yellow-500 rounded-full'></div>

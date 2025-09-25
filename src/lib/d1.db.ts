@@ -328,6 +328,33 @@ export class D1Storage implements IStorage {
     }
   }
 
+  async setUserAvatar(userName: string, avatarUrl: string): Promise<void> {
+    try {
+      const db = await this.getDatabase();
+      await db
+        .prepare('UPDATE users SET avatar_url = ? WHERE username = ?')
+        .bind(avatarUrl, userName)
+        .run();
+    } catch (err) {
+      console.error('Failed to set user avatar:', err);
+      throw err;
+    }
+  }
+
+  async getUserDetails(userName: string): Promise<{ username: string, avatar_url: string | null } | null> {
+    try {
+      const db = await this.getDatabase();
+      const result = await db
+        .prepare('SELECT username, avatar_url FROM users WHERE username = ?')
+        .bind(userName)
+        .first<{ username: string, avatar_url: string | null }>();
+      return result;
+    } catch (err) {
+      console.error('Failed to get user details:', err);
+      throw err;
+    }
+  }
+
   async deleteUser(userName: string): Promise<void> {
     try {
       const db = await this.getDatabase();

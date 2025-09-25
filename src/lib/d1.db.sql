@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS users (
   username TEXT PRIMARY KEY,
   password TEXT NOT NULL,
+  avatar_url TEXT,
   created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
 );
 
