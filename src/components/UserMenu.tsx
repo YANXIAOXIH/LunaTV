@@ -1173,19 +1173,18 @@ export const UserMenu: React.FC = () => {
       <div className='relative'>
         <button
           onClick={handleMenuClick}
-          className='w-10 h-10 p-2 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200/50 dark:text-gray-300 dark:hover:bg-gray-700/50 transition-colors bg-cover bg-center'
+          className='w-10 h-10 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200/50 dark:text-gray-300 dark:hover:bg-gray-700/50 transition-colors'
           aria-label='User Menu'
-          style={{ backgroundImage: avatarUrl && !avatarError ? `url(${avatarUrl})` : 'none' }}
         >
-          {(!avatarUrl || avatarError) && <User className='w-full h-full' />}
-
-          {avatarUrl && !avatarError && (
+          {avatarUrl && !avatarError ? (
             <img
               src={avatarUrl}
-              alt=""
-              className="hidden"
+              alt="User Avatar"
+              className="w-8 h-8 object-cover rounded-full"
               onError={() => setAvatarError(true)}
             />
+          ) : (
+            <User className='w-6 h-6' />
           )}
         </button>
         {updateStatus === UpdateStatus.HAS_UPDATE && (
