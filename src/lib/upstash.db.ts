@@ -352,9 +352,9 @@ export class UpstashRedisStorage implements IStorage {
   async setUserAvatar(userName: string, avatarUrl: string): Promise<void> {
     const key = this.userAvatarKey(userName);
     if (avatarUrl) {
-      await this.redis.set(key, avatarUrl);
+      await this.client.set(key, avatarUrl);
     } else {
-      await this.redis.del(key);
+      await this.client.del(key);
     }
   }
 
@@ -364,7 +364,7 @@ export class UpstashRedisStorage implements IStorage {
       return null;
     }
 
-    const avatarUrl = await this.redis.get<string>(this.userAvatarKey(userName));
+    const avatarUrl = await this.client.get<string>(this.userAvatarKey(userName));
 
     return {
       username: userName,
