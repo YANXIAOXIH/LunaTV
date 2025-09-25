@@ -3,6 +3,7 @@
 'use client';
 
 import {
+  Image as ImageIcon,
   Check,
   ChevronDown,
   ExternalLink,
@@ -22,7 +23,6 @@ import { CURRENT_VERSION } from '@/lib/version';
 import { checkForUpdates, UpdateStatus } from '@/lib/version_check';
 
 import { VersionPanel } from './VersionPanel';
-import { Image as ImageIcon, User, X } from 'lucide-react';
 
 interface AuthInfo {
   username?: string;
