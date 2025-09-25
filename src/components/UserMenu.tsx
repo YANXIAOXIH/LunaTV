@@ -487,9 +487,6 @@ export const UserMenu: React.FC = () => {
         <div className='px-3 py-2.5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800 dark:to-gray-800/50'>
           <div className='space-y-1'>
             <div className='flex items-center justify-between'>
-              <span className='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
-                当前用户
-              </span>
               <span
                 className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${(authInfo?.role || 'user') === 'owner'
                   ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
@@ -499,6 +496,9 @@ export const UserMenu: React.FC = () => {
                   }`}
               >
                 {getRoleText(authInfo?.role || 'user')}
+              </span>
+              <span className='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
+                当前用户
               </span>
             </div>
             <div className='flex items-center justify-between'>
