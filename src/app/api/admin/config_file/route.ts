@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     adminConfig = refineConfig(adminConfig);
     // 更新配置文件
     await db.saveAdminConfig(adminConfig);
-    setCachedConfig(null);
+    setCachedConfig(adminConfig);
     return NextResponse.json({
       success: true,
       message: '配置文件更新成功，正在应用...',
