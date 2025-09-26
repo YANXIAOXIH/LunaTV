@@ -62,6 +62,10 @@ export interface IStorage {
   // 用户列表
   getAllUsers(): Promise<string[]>;
 
+  //用户头像
+  setUserAvatar(userName: string, avatarUrl: string): Promise<void>;
+  getUserDetails(userName: string): Promise<{ username: string, avatar_url: string | null } | null>;
+
   // 管理员配置相关
   getAdminConfig(): Promise<AdminConfig | null>;
   setAdminConfig(config: AdminConfig): Promise<void>;

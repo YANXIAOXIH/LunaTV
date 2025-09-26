@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getAuthInfoFromCookie } from '@/lib/auth';
-import { getConfig, refineConfig } from '@/lib/config';
+import { getConfig, refineConfig, setCachedConfig } from '@/lib/config';
 import { db } from '@/lib/db';
 
 export const runtime = 'edge';
@@ -79,9 +79,10 @@ export async function POST(request: NextRequest) {
     adminConfig = refineConfig(adminConfig);
     // 更新配置文件
     await db.saveAdminConfig(adminConfig);
+    setCachedConfig(adminConfig);
     return NextResponse.json({
       success: true,
-      message: '配置文件更新成功',
+      message: '配置文件更新成功，正在应用...',
     });
   } catch (error) {
     console.error('更新配置文件失败:', error);

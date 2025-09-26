@@ -12,6 +12,7 @@ import {
   Shield,
   User,
   X,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -37,6 +38,8 @@ export const UserMenu: React.FC = () => {
   const [authInfo, setAuthInfo] = useState<AuthInfo | null>(null);
   const [storageType, setStorageType] = useState<string>('localstorage');
   const [mounted, setMounted] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [avatarError, setAvatarError] = useState(false);
 
   // Body 滚动锁定 - 使用 overflow 方式避免布局问题
   useEffect(() => {
@@ -123,6 +126,28 @@ export const UserMenu: React.FC = () => {
       const type =
         (window as any).RUNTIME_CONFIG?.STORAGE_TYPE || 'localstorage';
       setStorageType(type);
+
+      const fetchUserDetails = async () => {
+        try {
+          const response = await fetch('/api/admin/user/me');
+          if (response.ok) {
+            const data = await response.json();
+            if (data.avatar_url) {
+              setAvatarUrl(data.avatar_url);
+              localStorage.setItem('userAvatarUrl', data.avatar_url);
+            }
+          }
+        } catch (error) {
+          console.error("Couldn't fetch user details:", error);
+        }
+      };
+
+      if (auth?.username) {
+        // 先从缓存快速加载，再从网络更新
+        const cachedAvatar = localStorage.getItem('userAvatarUrl');
+        if (cachedAvatar) setAvatarUrl(cachedAvatar);
+        fetchUserDetails();
+      }
     }
   }, []);
 
@@ -194,6 +219,11 @@ export const UserMenu: React.FC = () => {
       const savedLiveDirectConnect = localStorage.getItem('liveDirectConnect');
       if (savedLiveDirectConnect !== null) {
         setLiveDirectConnect(JSON.parse(savedLiveDirectConnect));
+      }
+
+      const savedAvatarUrl = localStorage.getItem('userAvatarUrl');
+      if (savedAvatarUrl) {
+        setAvatarUrl(savedAvatarUrl);
       }
     }
   }, []);
@@ -398,6 +428,34 @@ export const UserMenu: React.FC = () => {
     }
   };
 
+  // 用户头像
+  const handleAvatarUrlChange = async (value: string) => {
+    setAvatarUrl(value);
+    setAvatarError(false);
+
+    if (typeof window !== 'undefined') {
+      if (value) {
+        localStorage.setItem('userAvatarUrl', value);
+      } else {
+        localStorage.removeItem('userAvatarUrl');
+      }
+    }
+
+    try {
+      const response = await fetch('/api/admin/user/avatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatarUrl: value }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save avatar to the server.');
+      }
+    } catch (error) {
+      console.error('Network error while saving avatar:', error);
+    }
+  };
+
   // 获取感谢信息
   const getThanksInfo = (dataSource: string) => {
     switch (dataSource) {
@@ -437,6 +495,7 @@ export const UserMenu: React.FC = () => {
     setDoubanDataSource(defaultDoubanProxyType);
     setDoubanImageProxyType(defaultDoubanImageProxyType);
     setDoubanImageProxyUrl(defaultDoubanImageProxyUrl);
+    setAvatarUrl('');
 
     if (typeof window !== 'undefined') {
       localStorage.setItem('defaultAggregateSearch', JSON.stringify(true));
@@ -447,6 +506,7 @@ export const UserMenu: React.FC = () => {
       localStorage.setItem('doubanDataSource', defaultDoubanProxyType);
       localStorage.setItem('doubanImageProxyType', defaultDoubanImageProxyType);
       localStorage.setItem('doubanImageProxyUrl', defaultDoubanImageProxyUrl);
+      localStorage.removeItem('userAvatarUrl');
     }
   };
 
@@ -955,6 +1015,29 @@ export const UserMenu: React.FC = () => {
               </label>
             </div>
           </div>
+          <div className='my-6 border-t border-gray-200 dark:border-gray-700'></div>
+
+          {/* 自定义头像 */}
+          <div className='space-y-3'>
+            <div>
+              <h4 className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                自定义头像
+              </h4>
+              <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
+                输入一个在线图片链接作为您的头像
+              </p>
+            </div>
+            <div className="relative">
+              <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type='text'
+                className='w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 shadow-sm hover:border-gray-400 dark:hover:border-gray-500'
+                placeholder='https://.../avatar.png'
+                value={avatarUrl}
+                onChange={(e) => handleAvatarUrlChange(e.target.value)}
+              />
+            </div>
+          </div>
 
           {/* 底部说明 */}
           <div className='mt-6 pt-4 border-t border-gray-200 dark:border-gray-700'>
@@ -1091,10 +1174,19 @@ export const UserMenu: React.FC = () => {
       <div className='relative'>
         <button
           onClick={handleMenuClick}
-          className='w-10 h-10 p-2 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200/50 dark:text-gray-300 dark:hover:bg-gray-700/50 transition-colors'
+          className='w-10 h-10 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200/50 dark:text-gray-300 dark:hover:bg-gray-700/50 transition-colors'
           aria-label='User Menu'
         >
-          <User className='w-full h-full' />
+          {avatarUrl && !avatarError ? (
+            <img
+              src={avatarUrl}
+              alt="User Avatar"
+              className="w-7 h-7 object-cover rounded-full"
+              onError={() => setAvatarError(true)}
+            />
+          ) : (
+            <User className='w-6 h-6' />
+          )}
         </button>
         {updateStatus === UpdateStatus.HAS_UPDATE && (
           <div className='absolute top-[2px] right-[2px] w-2 h-2 bg-yellow-500 rounded-full'></div>
