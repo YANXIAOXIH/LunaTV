@@ -1,6 +1,7 @@
 // src/components/HeroCarousel.tsx
 'use client';
 
+import { processImageUrl } from '@/lib/utils';
 import useEmblaCarousel from 'embla-carousel-react';
 import { Film, Tv, Sparkles, Clapperboard } from 'lucide-react';
 import Link from 'next/link';
@@ -97,7 +98,7 @@ export default function HeroCarousel() {
               className="flex-[0_0_100%] relative aspect-[16/9] md:aspect-[16/7] cursor-pointer"
               onClick={() => router.push(`/play?title=${encodeURIComponent(item.title)}&douban_id=${item.id}`)}
             >
-              <img src={item.poster} alt={item.title} className="absolute inset-0 w-full h-full object-cover" />
+              <img src={processImageUrl(item.poster)} alt={item.title} className="absolute inset-0 w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
               <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
 
