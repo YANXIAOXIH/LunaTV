@@ -26,7 +26,6 @@ import PageLayout from '@/components/PageLayout';
 import ScrollableRow from '@/components/ScrollableRow';
 import { useSite } from '@/components/SiteProvider';
 import VideoCard from '@/components/VideoCard';
-
 import HeroCarousel from '@/components/HeroCarousel';
 export const runtime = 'edge';
 
@@ -76,7 +75,7 @@ function HomeClient() {
         setLoading(true);
 
         // 并行获取热门电影、热门剧集和热门综艺
-        const [carouselData, moviesData, tvShowsData, varietyShowsData, bangumiCalendarData] =
+        const [moviesData, tvShowsData, varietyShowsData, bangumiCalendarData, carouselData] =
           await Promise.all([
             getDoubanCategories({
               kind: 'movie',
@@ -88,10 +87,6 @@ function HomeClient() {
             GetBangumiCalendarData(),
           ]);
 
-        if (carouselData.code === 200) {
-          setCarouselItems(carouselData.list);
-        }
-
         if (moviesData.code === 200) {
           setHotMovies(moviesData.list);
         }
@@ -102,6 +97,10 @@ function HomeClient() {
 
         if (varietyShowsData.code === 200) {
           setHotVarietyShows(varietyShowsData.list);
+        }
+
+        if (carouselData.code === 200) {
+          setCarouselItems(carouselData.list);
         }
 
         setBangumiCalendarData(bangumiCalendarData);
