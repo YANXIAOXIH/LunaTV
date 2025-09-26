@@ -170,9 +170,9 @@ function HomeClient() {
   };
 
   return (
-    <PageLayout className="relative">
+    <PageLayout>
       {/* 顶部 Tab 切换 */}
-      <div className='absolute top-4 left-1/2 -translate-x-1/2 z-20'>
+      <div className='relative absolute top-4 left-1/2 -translate-x-1/2 z-20'>
         <CapsuleSwitch
           options={[
             { label: '首页', value: 'home' },
