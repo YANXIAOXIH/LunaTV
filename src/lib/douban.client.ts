@@ -54,6 +54,16 @@ interface DoubanRecommendApiResponse {
   }>;
 }
 
+interface DoubanDetailApiResponse {
+  intro: string;
+  photos: Array<{
+    thumb: string;
+    image: string;
+    cover: string;
+  }>;
+}
+
+
 /**
  * 带超时的 fetch 请求
  */
@@ -90,6 +100,11 @@ async function fetchWithTimeout(
     clearTimeout(timeoutId);
     throw error;
   }
+}
+
+export interface DoubanItemDetails {
+  backdropUrl: string | null;
+  overview: string | null;
 }
 
 function getDoubanProxyConfig(): {
@@ -475,5 +490,38 @@ async function fetchDoubanRecommends(
     };
   } catch (error) {
     throw new Error(`获取豆瓣推荐数据失败: ${(error as Error).message}`);
+  }
+}
+
+export async function getDoubanItemDetails(itemId: string): Promise<DoubanItemDetails> {
+  const { proxyType, proxyUrl } = getDoubanProxyConfig();
+  const useTencentCDN = proxyType === 'cmliussss-cdn-tencent';
+  const useAliCDN = proxyType === 'cmliussss-cdn-ali';
+
+  const detailUrl = useTencentCDN
+    ? `https://m.douban.cmliussss.net/rexxar/api/v2/movie/${itemId}`
+    : useAliCDN
+      ? `https://m.douban.cmliussss.com/rexxar/api/v2/movie/${itemId}`
+      : `https://m.douban.com/rexxar/api/v2/movie/${itemId}`;
+
+  try {
+    const response = await fetchWithTimeout(
+      detailUrl,
+      (useTencentCDN || useAliCDN) ? '' : proxyUrl
+    );
+    if (!response.ok) return { backdropUrl: null, overview: null };
+
+    const data: DoubanDetailApiResponse = await response.json();
+
+    const backdropUrl = (data.photos && data.photos.length > 0)
+      ? data.photos[0].image || data.photos[0].cover
+      : null;
+
+    const overview = data.intro || null;
+
+    return { backdropUrl, overview };
+  } catch (error) {
+    console.error(`Failed to fetch details for item ${itemId}:`, error);
+    return { backdropUrl: null, overview: null };
   }
 }

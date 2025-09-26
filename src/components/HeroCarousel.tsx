@@ -1,15 +1,16 @@
 // src/components/HeroCarousel.tsx
 'use client';
 
-import { processImageUrl } from '@/lib/utils';
 import useEmblaCarousel from 'embla-carousel-react';
 import { Film, Tv, Sparkles, Clapperboard } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
 
-import { getDoubanCategories } from '@/lib/douban.client';
+import { getDoubanCategories, getDoubanItemDetails, DoubanItemDetails } from '@/lib/douban.client';
 import { DoubanItem } from '@/lib/types';
+import { processImageUrl } from '@/lib/utils';
+
 
 // 定义分类类型
 type Category = 'movie' | 'tv' | 'anime' | 'show';
@@ -22,19 +23,28 @@ const CATEGORY_META = {
   show: { label: '热门综艺', icon: Clapperboard, href: '/douban?type=show' },
 };
 
+// 扩展 DoubanItem 类型以包含我们需要的所有信息
+interface CarouselItem extends DoubanItem {
+  category: Category;
+  backdrop: string; // 高清剧照 (必须有，回退后也是poster)
+  overview?: string | null; // 简介
+}
+
+
 export default function HeroCarousel() {
   const router = useRouter();
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
 
   // 状态管理
   const [loading, setLoading] = useState(true);
-  const [allItems, setAllItems] = useState<(DoubanItem & { category: Category })[]>([]);
+  const [allItems, setAllItems] = useState<CarouselItem[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
 
   // 获取所有分类的数据
   useEffect(() => {
     const fetchAllData = async () => {
       try {
+        setLoading(true);
         const [movies, tvs, animes, shows] = await Promise.all([
           getDoubanCategories({ kind: 'movie', category: '热门', type: '全部', pageLimit: 3 }),
           getDoubanCategories({ kind: 'tv', category: '热门', type: '热门', pageLimit: 3 }),
@@ -42,14 +52,26 @@ export default function HeroCarousel() {
           getDoubanCategories({ kind: 'tv', category: '热门', type: '综艺', pageLimit: 3 }),
         ]);
 
-        const combinedItems = [
+        const combinedItems: (DoubanItem & { category: Category })[] = [
           ...movies.list.map(item => ({ ...item, category: 'movie' as Category })),
           ...tvs.list.map(item => ({ ...item, category: 'tv' as Category })),
           ...animes.list.map(item => ({ ...item, category: 'anime' as Category })),
           ...shows.list.map(item => ({ ...item, category: 'show' as Category })),
         ];
 
-        setAllItems(combinedItems);
+        // 并行获取所有影片的详细信息（剧照和简介）
+        const itemsWithDetails = await Promise.all(
+          combinedItems.map(async (item) => {
+            const details: DoubanItemDetails = await getDoubanItemDetails(item.id);
+            return {
+              ...item,
+              backdrop: details.backdropUrl || item.poster, // 剧照URL，如果失败则回退到海报URL
+              overview: details.overview,
+            };
+          })
+        );
+
+        setAllItems(itemsWithDetails);
       } catch (error) {
         console.error('Failed to fetch carousel data:', error);
       } finally {
@@ -64,6 +86,7 @@ export default function HeroCarousel() {
     if (!emblaApi) return;
     const onSelect = () => setActiveIndex(emblaApi.selectedScrollSnap());
     emblaApi.on('select', onSelect);
+    onSelect(); // 初始化时设置一次
     return () => { emblaApi.off('select', onSelect); };
   }, [emblaApi]);
 
@@ -72,7 +95,7 @@ export default function HeroCarousel() {
     if (!emblaApi || loading) return;
     const interval = setInterval(() => {
       emblaApi.scrollNext();
-    }, 5000); // 5秒切换
+    }, 5000); // 每5秒切换
     return () => clearInterval(interval);
   }, [emblaApi, loading]);
 
@@ -98,7 +121,7 @@ export default function HeroCarousel() {
               className="flex-[0_0_100%] relative aspect-[16/9] md:aspect-[16/7] cursor-pointer"
               onClick={() => router.push(`/play?title=${encodeURIComponent(item.title)}&douban_id=${item.id}`)}
             >
-              <img src={processImageUrl(item.poster)} alt={item.title} className="absolute inset-0 w-full h-full object-cover" />
+              <img src={processImageUrl(item.backdrop)} alt={`${item.title} background`} className="absolute inset-0 w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
               <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
 
@@ -110,6 +133,12 @@ export default function HeroCarousel() {
                   <p className="text-sm sm:text-base text-gray-300 mt-2 text-shadow">
                     {item.year} - {CATEGORY_META[item.category].label}
                   </p>
+
+                  {item.overview && (
+                    <p className="hidden md:block text-sm text-gray-200 mt-4 line-clamp-3 text-shadow">
+                      {item.overview}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -117,28 +146,43 @@ export default function HeroCarousel() {
         </div>
       </div>
 
-      {/* 下方分类导航 */}
-      <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        {Object.entries(CATEGORY_META).map(([key, meta]) => {
-          const Icon = meta.icon;
-          const isActive = currentCategory === key;
-          return (
-            <div
-              key={key}
-              onClick={() => onCategoryClick(meta.href)}
-              className={`relative p-4 rounded-lg cursor-pointer overflow-hidden transition-all duration-300 ${isActive ? 'bg-white/20' : 'bg-white/10 hover:bg-white/20'}`}
-            >
-              <div className="flex items-center gap-3">
-                <Icon className={`w-6 h-6 transition-colors ${isActive ? 'text-white' : 'text-gray-400'}`} />
-                <span className={`font-semibold transition-colors ${isActive ? 'text-white' : 'text-gray-300'}`}>
-                  {meta.label}
-                </span>
+      {/* 悬浮的分类导航 */}
+      <div className="absolute bottom-4 left-4 sm:bottom-8 sm:left-8 z-10 w-[calc(100%-2rem)] sm:w-auto">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
+          {Object.entries(CATEGORY_META).map(([key, meta]) => {
+            const Icon = meta.icon;
+            const isActive = currentCategory === key;
+            const itemForCategory = allItems.find(item => item.category === key);
+
+            return (
+              <div
+                key={key}
+                onClick={() => onCategoryClick(meta.href)}
+                className={`relative p-3 rounded-lg cursor-pointer overflow-hidden transition-all duration-300 backdrop-blur-md group/nav-item
+                  ${isActive
+                    ? 'bg-white/30'
+                    : 'bg-black/40 hover:bg-black/60'
+                  }`
+                }
+                style={{
+                  backgroundImage: itemForCategory ? `url(${processImageUrl(itemForCategory.poster)})` : 'none',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
+              >
+                <div className="absolute inset-0 bg-black/40 group-hover/nav-item:bg-black/30 transition-colors duration-300" />
+
+                <div className="relative flex items-center gap-3">
+                  <Icon className={`w-5 h-5 transition-colors duration-300 ${isActive ? 'text-white' : 'text-gray-300'}`} />
+                  <span className={`text-sm font-semibold transition-colors duration-300 ${isActive ? 'text-white' : 'text-gray-100'}`}>
+                    {meta.label}
+                  </span>
+                </div>
+                <div className={`absolute bottom-0 left-0 h-1 bg-green-500 transition-all duration-300 ${isActive ? 'w-full' : 'w-0'}`} />
               </div>
-              {/* 高亮状态下的进度条 */}
-              <div className={`absolute bottom-0 left-0 h-1 bg-green-500 transition-all duration-300 ${isActive ? 'w-full' : 'w-0'}`} />
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </section>
   );
