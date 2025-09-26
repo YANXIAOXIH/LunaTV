@@ -76,7 +76,7 @@ function HomeClient() {
         setLoading(true);
 
         // 并行获取热门电影、热门剧集和热门综艺
-        const [moviesData, tvShowsData, varietyShowsData, bangumiCalendarData] =
+        const [carouselData, moviesData, tvShowsData, varietyShowsData, bangumiCalendarData] =
           await Promise.all([
             getDoubanCategories({
               kind: 'movie',
