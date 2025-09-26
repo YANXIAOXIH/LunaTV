@@ -27,6 +27,7 @@ import ScrollableRow from '@/components/ScrollableRow';
 import { useSite } from '@/components/SiteProvider';
 import VideoCard from '@/components/VideoCard';
 
+import HeroCarousel from '@/components/HeroCarousel';
 export const runtime = 'edge';
 
 function HomeClient() {
@@ -86,6 +87,10 @@ function HomeClient() {
             getDoubanCategories({ kind: 'tv', category: 'show', type: 'show' }),
             GetBangumiCalendarData(),
           ]);
+
+        if (carouselData.code === 200) {
+          setCarouselItems(carouselData.list);
+        }
 
         if (moviesData.code === 200) {
           setHotMovies(moviesData.list);
@@ -225,6 +230,9 @@ function HomeClient() {
           ) : (
             // 首页视图
             <>
+              {/* 轮播图组件 */}
+              <HeroCarousel />
+
               {/* 继续观看 */}
               <ContinueWatching />
 
