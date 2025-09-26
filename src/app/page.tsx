@@ -170,20 +170,20 @@ function HomeClient() {
   };
 
   return (
-    <PageLayout>
-      <div className='px-2 sm:px-10 py-4 sm:py-8 overflow-visible'>
-        {/* 顶部 Tab 切换 */}
-        <div className='mb-8 flex justify-center'>
-          <CapsuleSwitch
-            options={[
-              { label: '首页', value: 'home' },
-              { label: '收藏夹', value: 'favorites' },
-            ]}
-            active={activeTab}
-            onChange={(value) => setActiveTab(value as 'home' | 'favorites')}
-          />
-        </div>
+    <PageLayout className="relative">
+      {/* 顶部 Tab 切换 */}
+      <div className='absolute top-4 left-1/2 -translate-x-1/2 z-20'>
+        <CapsuleSwitch
+          options={[
+            { label: '首页', value: 'home' },
+            { label: '收藏夹', value: 'favorites' },
+          ]}
+          active={activeTab}
+          onChange={(value) => setActiveTab(value as 'home' | 'favorites')}
+        />
+      </div>
 
+      <div className='px-2 sm:px-10 py-4 sm:py-8 overflow-visible'>
         <div className='max-w-[95%] mx-auto'>
           {activeTab === 'favorites' ? (
             // 收藏夹视图
@@ -226,7 +226,9 @@ function HomeClient() {
             // 首页视图
             <>
               {/* 轮播图组件 */}
-              <HeroCarousel />
+              <div className="pt-12">
+                <HeroCarousel />
+              </div>
 
               {/* 继续观看 */}
               <ContinueWatching />
